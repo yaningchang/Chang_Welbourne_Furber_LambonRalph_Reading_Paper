@@ -1,0 +1,208 @@
+##################################################
+# create the net and start using it
+##################################################
+addNet Triangle_Reading -i 10 -t 3 CONTINUOUS
+
+
+##################################################
+# add the three groups and connect them properly:
+##################################################
+addGroup Vision 2560 INPUT
+
+addGroup ControlH0 1 +USE_OUTPUT_HIST +USE_TARGET_HIST -BIASED
+addGroup H0 200 +USE_OUTPUT_HIST +USE_TARGET_HIST
+
+addGroup ControlHOH 1 +USE_OUTPUT_HIST +USE_TARGET_HIST -BIASED
+addGroup HOH 250 +USE_OUTPUT_HIST +USE_TARGET_HIST
+
+addGroup ControlH2 1 +USE_OUTPUT_HIST +USE_TARGET_HIST -BIASED
+addGroup H2 200 +USE_OUTPUT_HIST +USE_TARGET_HIST
+
+addGroup ControlH1 1 +USE_OUTPUT_HIST +USE_TARGET_HIST -BIASED
+addGroup H1 500 +USE_OUTPUT_HIST +USE_TARGET_HIST
+
+#addGroup ControlPhon 1 +USE_OUTPUT_HIST +USE_TARGET_HIST -BIASED
+addGroup Phonology  61  INPUT OUTPUT +STANDARD_CRIT +USE_OUTPUT_HIST +USE_TARGET_HIST +SOFT_CLAMP +WEAK_CLAMP
+
+addGroup ControlRecur1 1 +USE_OUTPUT_HIST +USE_TARGET_HIST -BIASED
+addGroup Recur1	20   +USE_OUTPUT_HIST +USE_TARGET_HIST
+
+addGroup Context  3  INPUT OUTPUT +STANDARD_CRIT +USE_OUTPUT_HIST +USE_TARGET_HIST +SOFT_CLAMP +WEAK_CLAMP
+
+addGroup ControlH4 1 +USE_OUTPUT_HIST +USE_TARGET_HIST -BIASED
+addGroup H4	500   +USE_OUTPUT_HIST +USE_TARGET_HIST
+
+addGroup ControlH3 1 +USE_OUTPUT_HIST +USE_TARGET_HIST -BIASED
+addGroup H3	200   +USE_OUTPUT_HIST +USE_TARGET_HIST
+
+addGroup Semantic  200  INPUT OUTPUT +STANDARD_CRIT +USE_OUTPUT_HIST +USE_TARGET_HIST +SOFT_CLAMP +WEAK_CLAMP
+
+addGroup ControlRecur2 1 +USE_OUTPUT_HIST +USE_TARGET_HIST -BIASED
+addGroup Recur2	80   +USE_OUTPUT_HIST +USE_TARGET_HIST
+
+set version 1
+
+connectGroups Vision H0 -type VisH0
+connectGroups Vision ControlH0 -type VisControlH0
+connectGroups ControlH0 H0 -type ControlH0H0
+
+connectGroups H0 HOH -type H0HOH
+connectGroups H0 ControlHOH -type H0ControlHOH
+connectGroups ControlHOH HOH -type ControlHOHHOH
+
+connectGroups HOH H2 -type HOHH2
+connectGroups HOH ControlH2 -type HOHControlH2
+connectGroups ControlH2 H2 -type ControlH2H2
+
+connectGroups HOH H1 -type HOHH1
+connectGroups HOH ControlH1 -type HOHControlH1
+connectGroups ControlH1 H1 -type ControlH1H1
+
+connectGroups H2 Phonology -type H2Phon
+
+connectGroups H1 Semantic -type H1Sem
+
+
+connectGroups Phonology H4 -type PhonH4
+connectGroups Context H4 -type ContH4
+connectGroups Phonology ControlH4 -type PhonControlH4
+connectGroups Context ControlH4 -type ContControlH4
+connectGroups ControlH4 H4 -type ControlH4H4
+
+connectGroups H4 Semantic -type H4Sem
+connectGroups Semantic H3 -type SemH3
+connectGroups Semantic ControlH3 -type SemControlH3
+connectGroups ControlH3 H3 -type ControlH3H3
+
+connectGroups H3 Phonology -type H3Phon
+connectGroups H3 Context -type H3Cont
+
+connectGroups Phonology Recur1 -type PhonRecur1
+connectGroups Phonology ControlRecur1 -type PhonControlRecur1
+connectGroups ControlRecur1 Recur1 -type ControlRecur1Recur1
+connectGroups Recur1 Phonology -type Recur1Phon
+
+
+connectGroups Semantic Recur2 -type SemRecur2
+connectGroups Semantic ControlRecur2 -type SemControlRecur2
+connectGroups ControlRecur2 Recur2 -type ControlRecur2Recur2
+connectGroups Recur2 Semantic -type Recur2Sem
+
+##################################################
+# add the example sets
+##################################################
+deleteExampleSets *
+
+loadExamples reading_examples.ex -s "reading_examples"
+
+
+exampleSet reading_examples PROBABILISTIC
+
+
+useTrainingSet reading_examples
+
+##################################################
+# initialize values
+##################################################
+
+setObj learningRate   0.1
+setObj reportInterval 10000
+setObj randRange      0.1
+setObj trainGroupCrit 0
+setObj numUpdates     50
+setObj outputCostStrength 0.0001
+setObj weightDecay 0.00000001
+setObj momentum 0.9
+setObj batchSize 1
+setObj targetRadius 0.001
+setObj clampStrength 0.9999
+
+
+setObj reading_examples.maxTime 10.0
+setObj reading_examples.minTime 10.0
+setObj reading_examples.graceTime 8.0
+
+#Enable pseudo-frequency selection of examples
+setObj pseudoExampleFreq 0
+
+#Set Control unit initial output 1.0
+setObj ControlH0.initOutput 1.0
+setObj ControlHOH.initOutput 1.0
+setObj ControlH1.initOutput 1.0
+setObj ControlH2.initOutput 1.0
+setObj ControlH3.initOutput 1.0
+setObj ControlH4.initOutput 1.0
+setObj ControlRecur1.initOutput 1.0
+setObj ControlRecur2.initOutput 1.0
+
+####
+resetNet
+
+####
+#put "negative weights"
+thawWeights -g H0 -type ControlH0H0
+setLinkValues max 0 -g H0 -type ControlH0H0
+setLinkValues min -4 -g H0 -type ControlH0H0
+setLinkValues randMean 0 -g H0 -type ControlH0H0
+setLinkValues randRange 0 -g H0 -type ControlH0H0
+randWeights -g H0 -type ControlH0H0     
+      
+thawWeights -g HOH -type ControlHOHHOH
+setLinkValues max 0 -g HOH -type ControlHOHHOH
+setLinkValues min -4 -g HOH -type ControlHOHHOH
+setLinkValues randMean 0 -g HOH -type ControlHOHHOH
+setLinkValues randRange 0 -g HOH -type ControlHOHHOH
+randWeights -g HOH -type ControlHOHHOH     
+      
+thawWeights -g H2 -type ControlH2H2
+setLinkValues max 0 -g H2 -type ControlH2H2
+setLinkValues min -4 -g H2 -type ControlH2H2
+setLinkValues randMean 0 -g H2 -type ControlH2H2
+setLinkValues randRange 0 -g H2 -type ControlH2H2
+randWeights -g H2 -type ControlH2H2     
+
+thawWeights -g H1 -type ControlH1H1
+setLinkValues max 0 -g H1 -type ControlH1H1
+setLinkValues min -4 -g H1 -type ControlH1H1
+setLinkValues randMean 0 -g H1 -type ControlH1H1
+setLinkValues randRange 0 -g H1 -type ControlH1H1
+randWeights -g H1 -type ControlH1H1     
+      
+thawWeights -g Recur1 -type ControlRecur1Recur1
+setLinkValues max 0 -g Recur1 -type ControlRecur1Recur1
+setLinkValues min -4 -g Recur1 -type ControlRecur1Recur1
+setLinkValues randMean 0 -g Recur1 -type ControlRecur1Recur1
+setLinkValues randRange 0 -g Recur1 -type ControlRecur1Recur1
+randWeights -g Recur1 -type ControlRecur1Recur1     
+
+thawWeights -g H4 -type ControlH4H4
+setLinkValues max 0 -g H4 -type ControlH4H4
+setLinkValues min -4 -g H4 -type ControlH4H4
+setLinkValues randMean 0 -g H4 -type ControlH4H4
+setLinkValues randRange 0 -g H4 -type ControlH4H4
+randWeights -g H4 -type ControlH4H4     
+
+thawWeights -g H3 -type ControlH3H3
+setLinkValues max 0 -g H3 -type ControlH3H3
+setLinkValues min -4 -g H3 -type ControlH3H3
+setLinkValues randMean 0 -g H3 -type ControlH3H3
+setLinkValues randRange 0 -g H3 -type ControlH3H3
+randWeights -g H3 -type ControlH3H3     
+
+thawWeights -g Recur2 -type ControlRecur2Recur2
+setLinkValues max 0 -g Recur2 -type ControlRecur2Recur2
+setLinkValues min -4 -g Recur2 -type ControlRecur2Recur2
+setLinkValues randMean 0 -g Recur2 -type ControlRecur2Recur2
+setLinkValues randRange 0 -g Recur2 -type ControlRecur2Recur2
+randWeights -g Recur2 -type ControlRecur2Recur2     
+
+#Assign fixed bias weights of -2 to all phonological and semantic units
+thawWeights -g Phonology -type bias
+setLinkValues randMean -2 -g Phonology -type bias
+setLinkValues randRange 0 -g Phonology -type bias
+freezeWeights -g Phonology -type bias  
+
+thawWeights -g Semantic -type bias
+setLinkValues randMean -2 -g Semantic -type bias
+setLinkValues randRange 0 -g Semantic -type bias
+freezeWeights  -g Semantic -type bias  

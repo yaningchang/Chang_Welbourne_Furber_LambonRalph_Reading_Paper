@@ -1,0 +1,50 @@
+global version
+
+source triangle_reading.in
+
+loadWeights Weight-v$version.wt.gz
+
+set les 0.9
+		
+set linkseed [expr ($version*100) +1]
+seed $linkseed
+lesionLinks Phonology -p $les 
+
+set linkseed [expr ($version*100) +2]
+seed $linkseed
+lesionLinks H4 -p $les 
+
+set linkseed [expr ($version*100) +3]
+seed $linkseed
+lesionLinks Recur1 -p $les 
+
+set linkseed [expr ($version*100) +4]
+seed $linkseed
+lesionLinks ControlH4 -p $les -t PhonControlH4
+
+set linkseed [expr ($version*100) +5]
+seed $linkseed
+lesionLinks ControlRecur1 -p $les -t PhonControlRecur1
+		
+for {set x 0} {$x<41} {incr x} {
+		
+	loadWeights  PD_Model/wt/PD-$version-$x.wt
+        
+    changeGroup Phonology +WRITE_OUTPUT
+	changeGroup HOH -WRITE_OUTPUT
+	changeGroup Semantic -WRITE_OUTPUT
+	changeGroup H0 -WRITE_OUTPUT
+	changeGroup Context -WRITE_OUTPUT
+		
+	openNetOutputFile PD_Model/AllWords-$version-$x-$layer.out
+	exampleSet reading_examples ORDERED
+	useTestingSet reading_examples
+	test
+	closeNetOutputFile
+		
+	train 10000
+		
+}
+		
+#deleteNet
+exit

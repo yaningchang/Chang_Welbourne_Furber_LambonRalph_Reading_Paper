@@ -1,0 +1,53 @@
+global version
+
+source triangle_reading.in
+loadWeights Weight-v$version.wt.gz
+
+set les 0.008 
+set trainingtime 20
+	
+
+for {set x 0} {$x<101} {incr x} {
+		
+	for {set junk 1} {$junk<21} {incr junk} {
+			set linkseed [expr ($version*100)+($x*13)+($junk*7)+1]
+			seed $linkseed
+			lesionLinks Semantic -p $les 
+
+			set linkseed [expr ($version*100)+($x*13) +($junk*7)+2]
+			seed $linkseed
+			lesionLinks H3 -p $les 
+
+			set linkseed [expr ($version*100)+($x*13) +($junk*7)+3]
+			seed $linkseed
+			lesionLinks Recur2 -p $les 
+
+			set linkseed [expr ($version*100)+($x*13) +($junk*7)+4]
+			seed $linkseed
+			lesionLinks ControlH3 -p $les -t SemControlH3
+
+			set linkseed [expr ($version*100)+($x*13) +($junk*7)+5]
+			seed $linkseed
+			lesionLinks ControlRecur2 -p $les -t SemControlRecur2
+		
+			train $trainingtime
+	 }
+	saveWeights  SD_Model/SD-$version-$x.wt.gz
+
+    changeGroup Phonology +WRITE_OUTPUT
+	changeGroup HOH -WRITE_OUTPUT
+	changeGroup Semantic -WRITE_OUTPUT
+	changeGroup H0 -WRITE_OUTPUT
+	changeGroup Context -WRITE_OUTPUT
+
+	openNetOutputFile SD_Model/AllWords-$version-$x-4.out
+	useTestingSet reading_examples
+	exampleSet reading_examples ORDERED
+	test
+	closeNetOutputFile
+	exampleSet reading_examples PROBABILISTIC
+
+}
+
+#deleteNet
+exit

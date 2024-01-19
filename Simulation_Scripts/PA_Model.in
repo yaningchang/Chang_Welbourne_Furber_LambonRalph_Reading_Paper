@@ -1,0 +1,42 @@
+global version
+
+source triangle_reading.in
+
+loadWeights Weight-v$version.wt.gz
+
+set les 0.9
+		
+set linkseed [expr ($version*100) +1]
+seed $linkseed
+lesionLinks H0 -p $les 
+
+set linkseed [expr ($version*100) +2]
+seed $linkseed
+lesionLinks HOH -p $les 
+
+set linkseed [expr ($version*100) +3]
+seed $linkseed
+lesionLinks ControlHOH -p $les -t H0ControlHOH
+		
+for {set x 0} {$x<41} {incr x} {
+		
+	saveWeights  PA-lesion/PA-$version-$x.wt.gz
+
+    changeGroup Phonology +WRITE_OUTPUT
+	changeGroup HOH -WRITE_OUTPUT
+	changeGroup Semantic -WRITE_OUTPUT
+	changeGroup H0 -WRITE_OUTPUT
+	changeGroup Context -WRITE_OUTPUT
+        
+	openNetOutputFile PA-lesion/AllWords-$version-$x-4.out
+	exampleSet reading_examples ORDERED
+	useTestingSet reading_examples
+	test
+	closeNetOutputFile
+		
+	train 10000
+	
+} 
+
+#deleteNet
+exit

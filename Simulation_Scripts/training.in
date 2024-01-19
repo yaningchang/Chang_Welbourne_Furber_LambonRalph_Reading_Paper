@@ -1,0 +1,8 @@
+for {set version 1} {$version<2} {incr version} {
+
+	source triangle_reading.in
+  
+	train 2000001
+	
+	deleteNet
+}
